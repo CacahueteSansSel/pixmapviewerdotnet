@@ -14,58 +14,59 @@ namespace Nightek.PBM
 {
     public static class PBM
     {
-        static string RemoveDuplicatedSpaces(string s)
-        {
-            string result = "";
-            bool WasSpaceBefore = false;
-
-            foreach (char c in s)
-            {
-                if (c == ' ' && WasSpaceBefore)
-                    continue;
-
-                if (c == ' ')
-                {
-                    WasSpaceBefore = true;
-                }
-
-                if (c != ' ')
-                    WasSpaceBefore = false;
-                result += c;
-            }
-
-            return result;
-        }
-
-        static void RemoveLineBreaks(string[] Array)
-        {
-            for (int i = 0; i < Array.Length; i++)
-            {
-                if (Array[i].EndsWith(Environment.NewLine))
-                    Array[i].Substring(Array[i].Length - Environment.NewLine.Length);
-            }
-        }
-
         public static Bitmap ToBitmap(string PBMFilename)
         {
             string fileData = File.ReadAllText(PBMFilename);
+            string[] tokens = Utilities.RemoveDuplicatedSpaces(fileData.Replace((char)13, ' ').Replace("\n", Environment.NewLine).Replace(Environment.NewLine, " ")).Split(' ');
 
-            string[] tokens = RemoveDuplicatedSpaces(fileData.Replace((char)13, ' ').Replace("\n", Environment.NewLine).Replace(Environment.NewLine, " ")).Split(' ');
-
-            RemoveLineBreaks(tokens);
-            Console.WriteLine(string.Join(";", tokens));
+            Utilities.RemoveLineBreaks(tokens);
 
             string format = tokens[0];
             int width = int.Parse(tokens[1]);
             int height = int.Parse(tokens[2]);
 
             Bitmap bmp = new Bitmap(width, height);
-
             var proc = FormatProcessor.GetForFormat(format);
             proc.Process(tokens, format == "P1" ? 3 : 4, bmp);
-            bmp.Tag = proc.FormatIdentifierLarge;
+            bmp.Tag = format;
 
             return bmp;
+        }
+
+        public static string ToPBM(Bitmap Bitmap, PixmapFormat Format)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine(Format.ToString());
+            builder.AppendLine($"{Bitmap.Width} {Bitmap.Height}");
+            if (Format > PixmapFormat.P1)
+                builder.AppendLine("255");
+
+            for (int y = 0; y < Bitmap.Height; y++)
+            {
+                for (int x = 0; x < Bitmap.Width; x++)
+                {
+                    Color color = Bitmap.GetPixel(x, y);
+                    switch (Format)
+                    {
+                        case PixmapFormat.P1:
+                            builder.AppendLine(color.GetBrightness() > 0.5f ? "1" : "0");
+                            break;
+                        case PixmapFormat.P2:
+                            builder.AppendLine((color.GetBrightness() * 255).ToString());
+                            break;
+                        case PixmapFormat.P3:
+                            builder.AppendLine($"{color.R} {color.G} {color.B}");
+                            break;
+                        case PixmapFormat.P5:
+                            //Not supported
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }

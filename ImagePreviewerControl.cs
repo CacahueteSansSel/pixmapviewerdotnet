@@ -18,8 +18,6 @@ namespace Nightek.PBM
         bool Holding = false;
         Point LastPos;
         Rectangle ImageRectOld;
-
-        public Point MousePosition { get; private set; }
         public Point MousePositionCanvas
             => new Point((int)(ImageRect.X + MousePosition.X / ZoomFactor), (int)(ImageRect.Y + MousePosition.Y / ZoomFactor));
         public bool PixelPerfect { get; set; } = true;
@@ -49,7 +47,6 @@ namespace Nightek.PBM
 
         private void EventMouseMove(object sender, MouseEventArgs e)
         {
-            MousePosition = e.Location;
             if (!Holding) return;
 
             Point delta = new Point(e.X - LastPos.X, e.Y - LastPos.Y);
